@@ -2,10 +2,9 @@ import { Document, Schema, model } from "mongoose";
 
 export interface UserDocumentInterface extends Document {
   email: string;
-  username: string;
   name: string;
+  phone_number: string;
   password: string;
-  image_url: string;
 }
 
 const UserSchema = new Schema<UserDocumentInterface>({
@@ -24,13 +23,13 @@ const UserSchema = new Schema<UserDocumentInterface>({
       }
     },
   },
-  username: {
+  name: {
     type: String,
     unique: true,
     required: true,
     trim: true,
   },
-  name: {
+  phone_number: {
     type: String,
     required: true,
     trim: true,
@@ -40,16 +39,12 @@ const UserSchema = new Schema<UserDocumentInterface>({
     required: true,
     trim: true,
     validate: (value: string) => {
-      if (!value.match(/^(?=.*[0-9])[a-zA-Z0-9!@#$%^&*]{6,16}$/)) {
+      if (!value.match(/^(?=.*[0-9])(?=.*[A-Z])[a-zA-Z0-9!@#$%^&*]{8,16}$/)) {
         throw new Error(
-          "La contraseña debe tener entre 6 y 16 caracteres y contener un número"
+          "La contraseña debe tener entre 8 y 16 caracteres y contener un número y una mayúscula"
         );
       }
     },
-  },
-  image_url: {
-    type: String,
-    trim: true,
   },
 });
 

@@ -2,25 +2,27 @@
   "name": "dsi",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
+    "dev": "tsc-watch --onSuccess \"env-cmd -f ./config/.env.development node dist/index.js\"",
+    "build": "tsc",
     "start": "tsc-watch --onSuccess \"node dist/index.js\"",
-    "doc": "typedoc",
-    "test": "mocha",
-    "coverage": "c8 --check-coverage npm test && c8 report --reporter=lcov"
+    "test": "env-cmd -f ./config/.env.test mocha --exit",
+    "coverage": "c8 --check-coverage npm test && c8 report --reporter=lcov",
+    "doc": "typedoc"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alu0101239187/dsi-template.git"
+    "url": "git+https://github.com/Orienteering-me/server.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Daniel Jorge Acosta",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/alu0101239187/dsi-template/issues"
+    "url": "https://github.com/Orienteering-me/server.git/issues"
   },
-  "homepage": "https://github.com/alu0101239187/dsi-template#readme",
+  "homepage": "https://github.com/Orienteering-me/server.git#readme",
   "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/cors": "^2.8.17",

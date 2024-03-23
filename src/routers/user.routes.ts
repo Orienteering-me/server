@@ -1,5 +1,5 @@
 import * as express from "express";
-import { User, UserDocumentInterface } from "../models/user.js";
+import { User } from "../models/user.js";
 export const userRouter = express.Router();
 
 // Adds an user
@@ -12,50 +12,49 @@ userRouter.post("/users", async (req, res) => {
     // Adds the user to the database
     await user.save();
     return res.status(201).send({
-      username: user.username,
-      name: user.name,
       email: user.email,
-      image_url: user.image_url,
+      name: user.name,
+      phone_number: user.phone_number,
     });
   } catch (error) {
     return res.status(500).send(error);
   }
 });
 
-// Updates user by username
-userRouter.patch("/users/:username", async (req, res) => {
+// Updates user by email
+userRouter.patch("/users", async (req, res) => {
   try {
+    if (!req.query.email) {
+      return res.status(400).send({
+        error: "Must supply an email",
+      });
+    }
+
     // Checks if update is allowed
-    const allowedUpdates = [
-      "email",
-      "username",
-      "name",
-      "password",
-      "image_url",
-    ];
+    const allowedUpdates = ["email", "name", "phone_number", "password"];
     const actualUpdates = Object.keys(req.body.new_user);
     const isValidUpdate = actualUpdates.every((update) =>
       allowedUpdates.includes(update)
     );
     if (!isValidUpdate) {
       return res.status(400).send({
-        error: "Actualización no permitida",
+        error: "Forbidden update",
       });
     }
 
     // Updates the user
     const userToUpdate = await User.findOne({
-      username: req.params.username.toString(),
+      email: req.query.email.toString(),
     });
     if (!userToUpdate) {
-      return res.status(404).send("Usuario no encontrado");
+      return res.status(404).send("User not found");
     }
     if (req.body.current_password != userToUpdate.password) {
-      return res.status(400).send("La contraseña es incorrecta");
+      return res.status(400).send("Wrong password");
     }
 
     const updatedUser = await User.findOneAndUpdate(
-      { username: req.params.username },
+      { email: req.query.email },
       {
         ...req.body.new_user,
       },
@@ -68,10 +67,9 @@ userRouter.patch("/users/:username", async (req, res) => {
     // Sends the result to the client
     if (updatedUser) {
       return res.status(200).send({
-        username: updatedUser.username,
-        name: updatedUser.name,
         email: updatedUser.email,
-        image_url: updatedUser.image_url,
+        name: updatedUser.name,
+        phone_number: updatedUser.phone_number,
       });
     }
     return res.status(404).send();
@@ -80,21 +78,33 @@ userRouter.patch("/users/:username", async (req, res) => {
   }
 });
 
-// Deletes user by username
-userRouter.delete("/users/:username", async (req, res) => {
+// Deletes user by email
+userRouter.delete("/users", async (req, res) => {
   try {
+    if (!req.query.email) {
+      return res.status(400).send({
+        error: "Must supply an email",
+      });
+    }
+    // Checks password
+    const userToDelete = await User.findOne({
+      email: req.query.email.toString(),
+    });
+    if (!userToDelete) {
+      return res.status(404).send("User not found");
+    }
+    if (req.body.password != userToDelete.password) {
+      return res.status(400).send("Wrong password");
+    }
+
     // Deletes the user
     const deletedUser = await User.findOneAndDelete({
-      username: req.params.username.toString(),
+      email: req.query.email.toString(),
     });
-
     // Sends the result to the client
     if (deletedUser) {
       return res.status(200).send({
-        username: deletedUser.username,
-        name: deletedUser.name,
         email: deletedUser.email,
-        image_url: deletedUser.image_url,
       });
     }
     return res.status(404).send();
