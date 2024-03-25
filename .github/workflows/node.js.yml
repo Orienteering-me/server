@@ -24,7 +24,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
-      - run: pwd
-      - run: mkdir config && echo "${{ secrets.TEST_ENV }}" > ./config/.env.test
+      - run: mkdir config
+      - run: ls -l
+      - run: echo "${{ secrets.TEST_ENV }}" > config/.env.test
       - run: npm install
       - run: npm test
