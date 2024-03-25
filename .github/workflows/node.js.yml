@@ -24,8 +24,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
-      - run: mkdir config
-      - run: echo "${{ secrets.TEST_ENV }}" > config/.env.test
-      - run: cat config/.env.test
+      - run: |
+          mkdir config
+          echo "MONGODB_URI=" > config/.env.test
+          echo "${{ secrets.TEST_ENV }}" >> config/.env.test
       - run: npm install
       - run: npm test
