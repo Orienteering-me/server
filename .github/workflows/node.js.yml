@@ -47,3 +47,5 @@ jobs:
 
       - name: Running tests
         run: npm test
+        env:
+          CI: true
