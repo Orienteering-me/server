@@ -12,6 +12,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      TEST_ENV: ${{ secrets.TEST_ENV }}
+
     strategy:
       matrix:
         node-version: [18.x, 19.x]
@@ -26,8 +29,6 @@ jobs:
           cache: "npm"
       - run: |
           mkdir config
-          echo "MONGODB_URI=\"" > config/.env.test
-          echo "${{ secrets.TEST_ENV }}" >> config/.env.test
-          echo "\"" >> config/.env.test
+          echo "MONGODB_URI=$TEST_ENV" > config/.env.test
       - run: npm install
       - run: npm test

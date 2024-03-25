@@ -3,7 +3,9 @@ import { connect } from "mongoose";
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  console.error("No MONGODB_URI environment variable has been defined in .env");
+  console.error(
+    "No MONGODB_URI environment variable has been defined in .env.test"
+  );
   process.exit(1);
 }
 
