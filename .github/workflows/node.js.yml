@@ -36,12 +36,6 @@ jobs:
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
 
-      - name: Create env vars
-        run: |
-          mkdir config
-          echo "MONGODB_URI=$TEST_MONGODB_URI" > config/.env.test
-          cat config/.env.test
-
       - name: Install dependencies
         run: npm i
 
