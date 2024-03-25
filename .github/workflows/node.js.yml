@@ -15,31 +15,25 @@ jobs:
     env:
       TEST_MONGODB_URI: ${{ secrets.TEST_MONGODB_URI }}
 
-    strategy:
-      matrix:
-        node-version: [18.x, 19.x]
-        mongodb-version: ["5.0", "6.0"]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
       - name: Git checkout
         uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 20.x
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20.x
           cache: "npm"
 
-      - name: Start MongoDB
+      - name: Start MongoDB 6.0
         uses: supercharge/mongodb-github-action@1.9.0
         with:
-          mongodb-version: ${{ matrix.mongodb-version }}
+          mongodb-version: "6.0"
 
       - name: Create env vars
         run: |
           mkdir config
-          echo "MONGODB_URI=localhost::27017" > config/.env.test
+          echo "MONGODB_URI=$TEST_MONGODB_URI" > config/.env.test
           cat config/.env.test
 
       - name: Install dependencies
