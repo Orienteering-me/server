@@ -26,6 +26,6 @@ jobs:
           cache: "npm"
       - run: mkdir config
       - run: echo "${{ secrets.TEST_ENV }}" > config/.env.test
-      - run: echo config/.env.test
+      - run: cat config/.env.test
       - run: npm install
       - run: npm test
