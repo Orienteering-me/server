@@ -29,6 +29,6 @@ jobs:
           cache: "npm"
       - run: |
           mkdir config
-          echo "MONGODB_URI=\"$TEST_ENV\"" > config/.env.test
+          echo "MONGODB_URI=${{ secrets.TEST_ENV }}" > config/.env.test
       - run: npm install
       - run: npm test
