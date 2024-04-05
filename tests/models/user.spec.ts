@@ -102,5 +102,15 @@ describe("Modelo User", () => {
         password: "testuser123",
       })
       .expect(500);
+
+    await request(app)
+      .post("/users")
+      .send({
+        email: "testuser@gmail.com",
+        name: "Test User",
+        phone_number: "123456789",
+        password: "TESTUSER123",
+      })
+      .expect(500);
   });
 });

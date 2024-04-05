@@ -39,9 +39,13 @@ const UserSchema = new Schema<UserDocumentInterface>({
     required: true,
     trim: true,
     validate: (value: string) => {
-      if (!value.match(/^(?=.*[0-9])(?=.*[A-Z])[a-zA-Z0-9!@#$%^&*]{8,16}$/)) {
+      if (
+        !value.match(
+          /^(?=.*[0-9])(?=.*[A-Z])(?=.*[a-z])[a-zA-Z0-9!@#$%^&*]{8,}$/
+        )
+      ) {
         throw new Error(
-          "La contraseña debe tener entre 8 y 16 caracteres y contener un número y una mayúscula"
+          "La contraseña debe tener más de 8 caracteres y contener un número, una minúscula y una mayúscula"
         );
       }
     },
