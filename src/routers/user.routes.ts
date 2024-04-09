@@ -1,4 +1,5 @@
 import * as express from "express";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { User } from "../models/user.js";
 export const userRouter = express.Router();
 
@@ -9,6 +10,13 @@ userRouter.post("/users", async (req, res) => {
       ...req.body,
     });
 
+    // Checks if the user already exists
+    const userToCreate = await User.findOne({
+      email: user.email,
+    });
+    if (userToCreate) {
+      return res.status(409).send("User already exists.");
+    }
     // Adds the user to the database
     await user.save();
     return res.status(201).send({
@@ -17,6 +25,34 @@ userRouter.post("/users", async (req, res) => {
       phone_number: user.phone_number,
     });
   } catch (error) {
+    return res.status(500).send(error);
+  }
+});
+
+userRouter.get("/users", async (req, res) => {
+  const jwtSecretKey = process.env.DIY_JWT_SECRET;
+  const token = req.headers["jwt-token"];
+
+  try {
+    const verified = jwt.verify(token!.toString(), jwtSecretKey!);
+    if (verified) {
+      const user = await User.findOne({
+        email: (<any>verified).email,
+      });
+      if (!user) {
+        return res.status(404).send("User not found");
+      }
+      return res.status(200).send({
+        email: user.email,
+        name: user.name,
+        phone_number: user.phone_number,
+      });
+    } else {
+      // Access Denied
+      return res.status(401).send({ message: "error" });
+    }
+  } catch (error) {
+    // Access Denied
     return res.status(500).send(error);
   }
 });

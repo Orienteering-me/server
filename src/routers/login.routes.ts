@@ -1,10 +1,13 @@
 import * as express from "express";
+import jwt from "jsonwebtoken";
 import { User, UserDocumentInterface } from "../models/user.js";
 
 export const loginRouter = express.Router();
 
 // Login
 loginRouter.post("/login", async (req, res) => {
+  const jwtSecretKey = process.env.DIY_JWT_SECRET;
+
   try {
     // Checks if user exists
     const user = await User.findOne({ email: req.body.email });
@@ -12,13 +15,15 @@ loginRouter.post("/login", async (req, res) => {
     // Sends the result to the client
     if (user) {
       if (req.body.password == user.password) {
-        return res.status(200).send({
+        let data = {
+          signInTime: Date.now(),
           email: user.email,
-          name: user.name,
-          phone_number: user.phone_number,
-        });
+        };
+
+        const token = jwt.sign(data, jwtSecretKey!);
+        return res.status(200).send({ token: token });
       }
-      return res.status(400).send(`Wrong password`);
+      return res.status(401).send(`Invalid password`);
     }
     return res.status(404).send(`User not found`);
   } catch (error) {
