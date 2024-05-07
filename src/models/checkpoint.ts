@@ -4,8 +4,9 @@ import { CourseDocumentInterface } from "./course.js";
 export interface CheckpointDocumentInterface extends Document {
   course: CourseDocumentInterface;
   number: number;
-  coords: [number, number];
-  type: "Start" | "Finish" | "Other";
+  lat: number;
+  lng: number;
+  qr_code: string;
 }
 
 const CheckpointSchema = new Schema<CheckpointDocumentInterface>({
@@ -18,31 +19,40 @@ const CheckpointSchema = new Schema<CheckpointDocumentInterface>({
     type: Number,
     required: true,
     validate: (value: number) => {
-      if (value <= 0 || value % 1 !== 0) {
-        throw new Error("El ID de la ruta debe ser un entero positivo.");
+      if (value < 0 || value % 1 !== 0) {
+        throw new Error(
+          "El numero del checkpoint debe ser un entero mayor o igual a 0."
+        );
       }
     },
   },
-  coords: {
-    type: [Number],
+  lat: {
+    type: Number,
     required: true,
     validate: (value: number[]) => {
       if (value[0] < -90 || value[0] > 90) {
         throw new Error(
           `La latitud de las coordenadas del checkpoint debe estar entre -90 y 90 grados`
         );
-      } else if (value[1] < -180 || value[1] > 180) {
+      }
+    },
+  },
+  lng: {
+    type: Number,
+    required: true,
+    validate: (value: number[]) => {
+      if (value[1] < -180 || value[1] > 180) {
         throw new Error(
           "La longitud de las coordenadas del checkpoint debe estar entre -180 y 180 grados"
         );
       }
     },
   },
-  type: {
+  qr_code: {
     type: String,
+    unique: true,
     required: true,
-    default: "Other",
-    enum: ["Start", "Finish"],
+    trim: true,
   },
 });
 

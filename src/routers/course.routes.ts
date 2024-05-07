@@ -1,11 +1,9 @@
 import * as express from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../models/user.js";
 import { Course } from "../models/course.js";
-import {
-  Checkpoint,
-  CheckpointDocumentInterface,
-} from "../models/checkpoint.js";
+import { Checkpoint } from "../models/checkpoint.js";
+import { User } from "../models/user.js";
+import { hash } from "bcrypt";
 export const courseRouter = express.Router();
 
 // Adds a course
@@ -22,11 +20,17 @@ courseRouter.post("/courses", async (req, res) => {
         name: req.body.name,
       });
       if (courseToCreate) {
-        return res.status(409).send("Course already exists.");
+        return res.status(409).send("Course already exists");
+      }
+      const admin = await User.findOne({
+        email: (<any>verified).email,
+      });
+      if (!admin) {
+        return res.status(404).send("Course admin not found");
       }
       const course = new Course({
         name: req.body.name,
-        admin: (<any>verified).email,
+        admin: admin._id,
         checkpoints: [],
       });
       await course.save();
@@ -35,8 +39,12 @@ courseRouter.post("/courses", async (req, res) => {
         const checkpoint = new Checkpoint({
           course: course._id,
           number: req.body.checkpoints[index].number,
-          coords: req.body.checkpoints[index].coords,
-          type: req.body.checkpoints[index].type,
+          lat: req.body.checkpoints[index].lat,
+          lng: req.body.checkpoints[index].lng,
+          qr_code: await hash(
+            course.name + "&" + req.body.checkpoints[index].number,
+            10
+          ),
         });
         await checkpoint.save();
 
@@ -52,7 +60,7 @@ courseRouter.post("/courses", async (req, res) => {
           }
         );
       }
-      return res.status(200);
+      return res.status(200).send();
     } else {
       return res.status(401).send("Access denied");
     }
@@ -75,12 +83,18 @@ courseRouter.get("/courses", async (req, res) => {
 
   try {
     const verified = jwt.verify(token!.toString(), jwtSecretKey!);
+
     if (verified) {
       const filter = req.query.name ? { name: req.query.name } : {};
-      const courses = await Course.find(filter).populate({
-        path: "checkpoints",
-        select: ["number", "coords", "type"],
-      });
+      const courses = await Course.find(filter)
+        .populate({
+          path: "admin",
+          select: ["name"],
+        })
+        .populate({
+          path: "checkpoints",
+          select: ["number", "lat", "lng", "qr_code"],
+        });
       if (courses.length === 0) {
         return res.status(404).send("Courses not found");
       }
@@ -89,6 +103,7 @@ courseRouter.get("/courses", async (req, res) => {
       return res.status(401).send("Access denied");
     }
   } catch (error) {
+    console.log(error);
     return res.status(500).send(error);
   }
 });
