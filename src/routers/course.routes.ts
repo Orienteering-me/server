@@ -1,9 +1,9 @@
 import * as express from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { Course } from "../models/course.js";
 import { Checkpoint } from "../models/checkpoint.js";
 import { User } from "../models/user.js";
-import { hash } from "bcrypt";
 export const courseRouter = express.Router();
 
 // Adds a course
@@ -41,7 +41,7 @@ courseRouter.post("/courses", async (req, res) => {
           number: req.body.checkpoints[index].number,
           lat: req.body.checkpoints[index].lat,
           lng: req.body.checkpoints[index].lng,
-          qr_code: await hash(
+          qr_code: await bcrypt.hash(
             course.name + "&" + req.body.checkpoints[index].number,
             10
           ),

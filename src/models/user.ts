@@ -33,22 +33,19 @@ const UserSchema = new Schema<UserDocumentInterface>({
     type: String,
     required: true,
     trim: true,
+    validate: (value: string) => {
+      if (!value.replace(/[\s()+\-\.]|ext/gi, "").match(/^\d{5,}$/)) {
+        throw new Error(
+          "Formato incorrecto en el número de teléfono del usuario"
+        );
+      }
+    },
   },
+  // The password isn't validated because it's a hash
   password: {
     type: String,
     required: true,
     trim: true,
-    validate: (value: string) => {
-      if (
-        !value.match(
-          /^(?=.*[0-9])(?=.*[A-Z])(?=.*[a-z])[a-zA-Z0-9!@#$%^&*]{8,}$/
-        )
-      ) {
-        throw new Error(
-          "La contraseña debe tener más de 8 caracteres y contener un número, una minúscula y una mayúscula"
-        );
-      }
-    },
   },
 });
 
