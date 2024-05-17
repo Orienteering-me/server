@@ -25,13 +25,11 @@ const UserSchema = new Schema<UserDocumentInterface>({
   },
   name: {
     type: String,
-    unique: true,
     required: true,
     trim: true,
   },
   phone_number: {
     type: String,
-    required: true,
     trim: true,
     validate: (value: string) => {
       if (!value.replace(/[\s()+\-\.]|ext/gi, "").match(/^\d{5,}$/)) {

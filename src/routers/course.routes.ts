@@ -9,7 +9,7 @@ export const courseRouter = express.Router();
 // Adds a course
 courseRouter.post("/courses", async (req, res) => {
   const jwtSecretKey = process.env.DIY_JWT_SECRET;
-  const token = req.headers["jwt-token"];
+  const token = req.headers["auth-token"];
 
   try {
     const verified = jwt.verify(token!.toString(), jwtSecretKey!);
@@ -79,7 +79,7 @@ courseRouter.post("/courses", async (req, res) => {
 
 courseRouter.get("/courses", async (req, res) => {
   const jwtSecretKey = process.env.DIY_JWT_SECRET;
-  const token = req.headers["jwt-token"];
+  const token = req.headers["auth-token"];
 
   try {
     const verified = jwt.verify(token!.toString(), jwtSecretKey!);
@@ -116,7 +116,7 @@ courseRouter.patch("/courses", async (req, res) => {
 // Deletes course by name
 courseRouter.delete("/courses", async (req, res) => {
   const jwtSecretKey = process.env.DIY_JWT_SECRET;
-  const token = req.headers["jwt-token"];
+  const token = req.headers["auth-token"];
 
   try {
     const verified = jwt.verify(token!.toString(), jwtSecretKey!);
