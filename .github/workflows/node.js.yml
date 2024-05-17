@@ -16,11 +16,6 @@ jobs:
       TEST_MONGODB_URI: ${{ secrets.TEST_MONGODB_URI }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
-    strategy:
-      matrix:
-        node-version: [17.x, 18.x, 19.x, 20.x]
-        mongodb-version: ["5.0", "6.0"]
-
     steps:
       - name: Git checkout
         uses: actions/checkout@v3
