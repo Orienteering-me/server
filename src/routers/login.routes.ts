@@ -7,7 +7,7 @@ export const loginRouter = express.Router();
 
 // Login
 loginRouter.post("/login", async (req, res) => {
-  const jwtSecretKey = process.env.DIY_JWT_SECRET;
+  const jwtSecretKey = process.env.JWT_SECRET;
 
   try {
     // Checks if user exists

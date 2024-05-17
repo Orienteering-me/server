@@ -28,7 +28,7 @@ describe("POST /login", () => {
 
     const token = jwt.verify(
       response.body.token!.toString(),
-      process.env.DIY_JWT_SECRET!
+      process.env.JWT_SECRET!
     );
     expect((<any>token).domain).to.equal("orienteering.me");
     expect((<any>token).email).to.equal("logintest@gmail.com");

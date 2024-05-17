@@ -26,7 +26,7 @@ userRouter.post("/users", async (req, res) => {
 });
 
 userRouter.get("/users", async (req, res) => {
-  const jwtSecretKey = process.env.DIY_JWT_SECRET;
+  const jwtSecretKey = process.env.JWT_SECRET;
   const token = req.headers["auth-token"];
 
   try {
@@ -56,7 +56,7 @@ userRouter.get("/users", async (req, res) => {
 });
 
 userRouter.patch("/users", async (req, res) => {
-  const jwtSecretKey = process.env.DIY_JWT_SECRET;
+  const jwtSecretKey = process.env.JWT_SECRET;
   const token = req.headers["auth-token"];
 
   try {
@@ -119,7 +119,7 @@ userRouter.patch("/users", async (req, res) => {
 
 // Deletes user by email
 userRouter.delete("/users", async (req, res) => {
-  const jwtSecretKey = process.env.DIY_JWT_SECRET;
+  const jwtSecretKey = process.env.JWT_SECRET;
   const token = req.headers["auth-token"];
 
   try {

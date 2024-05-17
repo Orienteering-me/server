@@ -16,7 +16,7 @@ const token = jwt.sign(
     domain: "orienteering.me",
     email: "userroutetest@gmail.com",
   },
-  process.env.DIY_JWT_SECRET!
+  process.env.JWT_SECRET!
 );
 
 describe("POST /users", () => {
@@ -118,7 +118,7 @@ describe("GET /users", () => {
             domain: "orienteering.me",
             email: "userroutetest2@gmail.com",
           },
-          process.env.DIY_JWT_SECRET!
+          process.env.JWT_SECRET!
         )
       )
       .expect(404);
@@ -145,7 +145,7 @@ describe("PATCH /users", () => {
 
     const responseToken = jwt.verify(
       response.body.token!.toString(),
-      process.env.DIY_JWT_SECRET!
+      process.env.JWT_SECRET!
     );
     expect((<any>responseToken).domain).to.equal("orienteering.me");
     expect((<any>responseToken).email).to.equal("userroutetest2@gmail.com");
@@ -230,7 +230,7 @@ describe("PATCH /users", () => {
             domain: "orienteering.me",
             email: "doesntexist@gmail.com",
           },
-          process.env.DIY_JWT_SECRET!
+          process.env.JWT_SECRET!
         )
       )
       .send({
@@ -352,7 +352,7 @@ describe("DELETE /users", () => {
             domain: "orienteering.me",
             email: "doesntexist@gmail.com",
           },
-          process.env.DIY_JWT_SECRET!
+          process.env.JWT_SECRET!
         )
       )
       .expect(404);
