@@ -1,6 +1,6 @@
 import * as express from "express";
 import jwt from "jsonwebtoken";
-import { User, UserDocumentInterface } from "../models/user.js";
+import { User } from "../models/user.js";
 export const userRouter = express.Router();
 
 userRouter.post("/users", async (req, res) => {
@@ -87,11 +87,13 @@ userRouter.patch("/users", async (req, res) => {
     }
     // Checks if the new email is in use
     if (req.body.email) {
-      const updatedEmailUser = await User.findOne({
-        email: req.body.email,
-      });
-      if (updatedEmailUser) {
-        return res.status(409).send("User already exists.");
+      if (req.body.email != (<any>verified).email) {
+        const updatedEmailUser = await User.findOne({
+          email: req.body.email,
+        });
+        if (updatedEmailUser) {
+          return res.status(409).send("User already exists.");
+        }
       }
     }
     const updatedUser = await User.findOneAndUpdate(

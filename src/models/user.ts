@@ -32,7 +32,10 @@ const UserSchema = new Schema<UserDocumentInterface>({
     type: String,
     trim: true,
     validate: (value: string) => {
-      if (!value.replace(/[\s()+\-\.]|ext/gi, "").match(/^\d{5,}$/)) {
+      if (
+        !value.replace(/[\s()+\-\.]|ext/gi, "").match(/^\d{5,}$/) &&
+        value.length != 0
+      ) {
         throw new Error(
           "Formato incorrecto en el número de teléfono del usuario"
         );
