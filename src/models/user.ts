@@ -1,4 +1,6 @@
 import { Document, Schema, model } from "mongoose";
+import { Course } from "./course.js";
+import { Auth } from "./auth.js";
 
 export interface UserDocumentInterface extends Document {
   email: string;
@@ -19,7 +21,7 @@ const UserSchema = new Schema<UserDocumentInterface>({
           /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
         )
       ) {
-        throw new Error("Formato incorrecto en el email del usuario");
+        throw new Error("User email's format is wrong");
       }
     },
   },
@@ -36,9 +38,7 @@ const UserSchema = new Schema<UserDocumentInterface>({
         !value.replace(/[\s()+\-\.]|ext/gi, "").match(/^\d{5,}$/) &&
         value.length != 0
       ) {
-        throw new Error(
-          "Formato incorrecto en el número de teléfono del usuario"
-        );
+        throw new Error("User phone number's format is wrong");
       }
     },
   },
@@ -48,6 +48,16 @@ const UserSchema = new Schema<UserDocumentInterface>({
     required: true,
     trim: true,
   },
+});
+
+UserSchema.post("findOneAndDelete", async function (user) {
+  await Auth.findOneAndDelete({
+    user: user._id,
+  });
+  const coursesToDelete = await Course.find({ admin: user._id });
+  for (let index = 0; index < coursesToDelete.length; index++) {
+    await Course.findByIdAndDelete(coursesToDelete[index]._id);
+  }
 });
 
 export const User = model<UserDocumentInterface>("User", UserSchema);

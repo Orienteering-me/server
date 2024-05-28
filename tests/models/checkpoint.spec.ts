@@ -1,6 +1,5 @@
 import request from "supertest";
 import { app } from "../../src/app.js";
-import { Checkpoint } from "../../src/models/checkpoint.js";
 import { Course } from "../../src/models/course.js";
 import { User } from "../../src/models/user.js";
 import jwt from "jsonwebtoken";

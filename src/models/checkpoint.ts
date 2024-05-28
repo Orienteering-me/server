@@ -20,19 +20,17 @@ const CheckpointSchema = new Schema<CheckpointDocumentInterface>({
     required: true,
     validate: (value: number) => {
       if (value < 0 || value % 1 !== 0) {
-        throw new Error(
-          "El numero del checkpoint debe ser un entero mayor o igual a 0."
-        );
+        throw new Error("Checkpoints number must be equal or greater than 0");
       }
     },
   },
   lat: {
     type: Number,
     required: true,
-    validate: (value: number[]) => {
-      if (value[0] < -90 || value[0] > 90) {
+    validate: (value: number) => {
+      if (value < -90 || value > 90) {
         throw new Error(
-          `La latitud de las coordenadas del checkpoint debe estar entre -90 y 90 grados`
+          "Checkpoints latitude must be between -90 and 90 degrees"
         );
       }
     },
@@ -40,10 +38,10 @@ const CheckpointSchema = new Schema<CheckpointDocumentInterface>({
   lng: {
     type: Number,
     required: true,
-    validate: (value: number[]) => {
-      if (value[1] < -180 || value[1] > 180) {
+    validate: (value: number) => {
+      if (value < -180 || value > 180) {
         throw new Error(
-          "La longitud de las coordenadas del checkpoint debe estar entre -180 y 180 grados"
+          "Checkpoints longitude must be between -180 and 180 degrees"
         );
       }
     },
