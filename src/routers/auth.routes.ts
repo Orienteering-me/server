@@ -16,7 +16,9 @@ authRouter.post("/register", async (req, res) => {
       email: user.email,
     });
     if (userToCreate) {
-      return res.status(409).send("User already exists.");
+      return res
+        .status(409)
+        .send("Ya existe un usuario registrado con este correo electrónico");
     }
     // Adds the user to the database
     await user.save();
@@ -31,7 +33,7 @@ authRouter.post("/login", async (req, res) => {
     // Checks if user exists
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(404).send("User not found");
+      return res.status(401).send("Usuario no encontrado");
     }
     // Checks if the password is correct
     const isPasswordCorrect = await bcrypt.compare(
@@ -39,7 +41,7 @@ authRouter.post("/login", async (req, res) => {
       user.password
     );
     if (!isPasswordCorrect) {
-      return res.status(401).send("Invalid password");
+      return res.status(401).send("Contraseña incorrecta");
     }
     // Checks if there is an active session
     const auth = await Auth.findOne({
@@ -72,10 +74,10 @@ authRouter.post("/login", async (req, res) => {
 });
 
 authRouter.post("/refresh", async (req, res) => {
-  const jwtSecretKey = process.env.JWT_REFRESH_SECRET;
-  const refreshToken = req.headers["refresh-token"];
-
   try {
+    const jwtSecretKey = process.env.JWT_REFRESH_SECRET;
+    const refreshToken = req.headers["refresh-token"];
+
     // Checks if the refresh token is correct
     let verified;
     try {
@@ -83,25 +85,25 @@ authRouter.post("/refresh", async (req, res) => {
     } catch (error) {
       const decoded = jwt.decode(refreshToken!.toString());
       deleteAuth((<any>decoded).email);
-      return res.status(401).send("Access denied");
+      return res.status(401).send("Acceso denegado");
     }
     // Checks if token user exists
     const user = await User.findOne({
       email: (<any>verified).email,
     });
     if (!user) {
-      return res.status(401).send("Access denied");
+      return res.status(401).send("Acceso denegado");
     }
     // Checks if the refresh token is valid
     const auth = await Auth.findOne({
       user: user._id,
     });
     if (!auth) {
-      return res.status(401).send("Access denied");
+      return res.status(401).send("Acceso denegado");
     }
     if (auth.refresh_token != refreshToken) {
       deleteAuth((<any>verified).email);
-      return res.status(401).send("Access denied");
+      return res.status(401).send("Acceso denegado");
     }
     // Deletes and sends the new pair of tokens
     deleteAuth((<any>verified).email);
@@ -129,15 +131,15 @@ authRouter.post("/refresh", async (req, res) => {
       .status(200)
       .send({ refresh_token: newRefreshToken, access_token: newAccessToken });
   } catch (error) {
-    return res.status(401).send(error);
+    return res.status(500).send(error);
   }
 });
 
 authRouter.post("/logout", async (req, res) => {
-  const jwtSecretKey = process.env.JWT_REFRESH_SECRET;
-  const refreshToken = req.headers["refresh-token"];
-
   try {
+    const jwtSecretKey = process.env.JWT_REFRESH_SECRET;
+    const refreshToken = req.headers["refresh-token"];
+
     // Checks if the refresh token is correct
     let verified;
     try {
@@ -145,14 +147,14 @@ authRouter.post("/logout", async (req, res) => {
     } catch (error) {
       const decoded = jwt.decode(refreshToken!.toString());
       deleteAuth((<any>decoded).email);
-      return res.status(401).send("Access denied");
+      return res.status(401).send("Acceso denegado");
     }
     // Checks if token user exists
     const user = await User.findOne({
       email: (<any>verified).email,
     });
     if (!user) {
-      return res.status(404).send("User not found");
+      return res.status(404).send("Usuario no encontrado");
     }
     // Checks if the refresh token is valid
     const auth = await Auth.findOne({
@@ -160,7 +162,7 @@ authRouter.post("/logout", async (req, res) => {
     });
     if (auth!.refresh_token != refreshToken) {
       deleteAuth((<any>verified).email);
-      return res.status(401).send("Access denied");
+      return res.status(401).send("Acceso denegado");
     }
     deleteAuth((<any>verified).email);
     return res.status(200).send();

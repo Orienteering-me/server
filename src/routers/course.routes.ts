@@ -13,14 +13,14 @@ courseRouter.post("/courses", async (req, res) => {
       name: req.body.name,
     });
     if (courseToCreate) {
-      return res.status(409).send("Course already exists");
+      return res.status(409).send("Ya existe una carrera con este nombre");
     }
     // Checks if the admin exists
     const admin = await User.findOne({
       email: res.locals.user_email,
     });
     if (!admin) {
-      return res.status(404).send("Course admin not found");
+      return res.status(404).send("Administrador de la carrera no encontrado");
     }
     // Saves the course
     const course = new Course({
@@ -56,15 +56,10 @@ courseRouter.post("/courses", async (req, res) => {
     }
     return res.status(201).send();
   } catch (error) {
-    // If error deletes the course and the cehckpoints created
-    const deletedCourse = await Course.findOneAndDelete({
+    // If error deletes the course created
+    await Course.findOneAndDelete({
       name: req.body.name,
     });
-    if (deletedCourse) {
-      for (let index = 0; index < deletedCourse.checkpoints.length; index++) {
-        await deletedCourse.checkpoints[index].deleteOne();
-      }
-    }
     return res.status(500).send(error);
   }
 });
@@ -75,36 +70,30 @@ courseRouter.get("/courses", async (req, res) => {
       let course;
       course = await Course.findOne({ name: req.query.name }).populate({
         path: "admin",
-        select: ["email"],
+        select: ["email", "name"],
       });
       if (!course) {
-        return res.status(404).send("Course not found");
+        return res.status(404).send("Carrera no encontrada");
       }
       if (res.locals.user_email == course.admin.email) {
-        course = await Course.findById(course._id)
-          .populate({
-            path: "admin",
-            select: ["email", "name"],
-          })
-          .populate({
-            path: "checkpoints",
-            select: ["number", "lat", "lng", "qr_code"],
-          });
+        await course.populate({
+          path: "checkpoints",
+          select: ["number", "lat", "lng", "qr_code"],
+        });
+        return res.status(200).send({
+          is_admin: true,
+          course: course,
+        });
       } else {
-        course = await Course.findById(course._id)
-          .populate({
-            path: "admin",
-            select: ["name"],
-          })
-          .populate({
-            path: "checkpoints",
-            select: ["number", "lat", "lng"],
-          });
+        await course.populate({
+          path: "checkpoints",
+          select: ["number", "lat", "lng"],
+        });
+        return res.status(200).send({
+          is_admin: false,
+          course: course,
+        });
       }
-      return res.status(200).send({
-        is_admin: res.locals.user_email == course!.admin.email,
-        course: course,
-      });
     } else {
       const courses = await Course.find()
         .populate({
@@ -116,7 +105,7 @@ courseRouter.get("/courses", async (req, res) => {
           select: ["number", "lat", "lng"],
         });
       if (courses.length == 0) {
-        return res.status(404).send("Courses not found");
+        return res.status(404).send("Carreras no encontradas");
       }
       return res.status(200).send(courses);
     }
@@ -135,7 +124,7 @@ courseRouter.delete("/courses", async (req, res) => {
     // Checks if the query is correct
     if (!req.query.name) {
       return res.status(400).send({
-        error: "The query must have a name",
+        error: "La consulta debe incluir el nombre de la carrera",
       });
     }
     const courseToDelete = await Course.findOne({
@@ -146,11 +135,11 @@ courseRouter.delete("/courses", async (req, res) => {
     });
     // Checks if the course exists
     if (!courseToDelete) {
-      return res.status(404).send("Course not found");
+      return res.status(404).send("Carrera no encontrada");
     }
     // Checks if the user in the token is the admin
     if (res.locals.user_email != courseToDelete.admin.email) {
-      return res.status(401).send("Access denied");
+      return res.status(401).send("Acceso denegado");
     }
     // Deletes the course triggering the schema post middleware
     await Course.findByIdAndDelete(courseToDelete._id);

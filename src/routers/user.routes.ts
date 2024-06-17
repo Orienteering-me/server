@@ -12,7 +12,7 @@ userRouter.get("/users", async (req, res) => {
       email: res.locals.user_email,
     });
     if (!user) {
-      return res.status(404).send("User not found");
+      return res.status(404).send("Usuario no encontrado");
     }
     // Sends the user data
     return res.status(200).send({
@@ -35,7 +35,7 @@ userRouter.patch("/users", async (req, res) => {
     );
     if (!isValidUpdate) {
       return res.status(400).send({
-        error: "Forbidden update",
+        error: "Actualización prohibida",
       });
     }
     // Checks if the user exists
@@ -43,7 +43,7 @@ userRouter.patch("/users", async (req, res) => {
       email: res.locals.user_email,
     });
     if (!userToUpdate) {
-      return res.status(404).send("User not found");
+      return res.status(404).send("Usuario no encontrado");
     }
     // Checks if the new email is in use
     if (req.body.email) {
@@ -52,7 +52,11 @@ userRouter.patch("/users", async (req, res) => {
           email: req.body.email,
         });
         if (updatedEmailUser) {
-          return res.status(409).send("User already exists.");
+          return res
+            .status(409)
+            .send(
+              "Ya existe un usuario registrado con este correo electrónico"
+            );
         }
       }
     }
@@ -72,7 +76,9 @@ userRouter.patch("/users", async (req, res) => {
     const refresh_token = await jwt.sign(
       data,
       process.env.JWT_REFRESH_SECRET!,
-      { expiresIn: "48h" }
+      {
+        expiresIn: "48h",
+      }
     );
     const access_token = await jwt.sign(data, process.env.JWT_ACCESS_SECRET!, {
       expiresIn: "15m",
@@ -103,7 +109,7 @@ userRouter.delete("/users", async (req, res) => {
       email: res.locals.user_email,
     });
     if (!userToDelete) {
-      return res.status(404).send("User not found");
+      return res.status(404).send("Usuario no encontrado");
     }
     // Deletes the user triggering the schema post middleware
     await User.findByIdAndDelete(userToDelete._id);

@@ -14,6 +14,13 @@ const CourseSchema = new Schema<CourseDocumentInterface>({
     unique: true,
     required: true,
     trim: true,
+    validate: (value: string) => {
+      if (value.includes("&")) {
+        throw new Error(
+          "El nombre de una carrera no puede contener el caracter &"
+        );
+      }
+    },
   },
   admin: {
     type: Schema.Types.ObjectId,

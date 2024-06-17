@@ -21,7 +21,7 @@ const UserSchema = new Schema<UserDocumentInterface>({
           /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
         )
       ) {
-        throw new Error("User email's format is wrong");
+        throw new Error("El formato del correo del usuario es incorrecto");
       }
     },
   },
@@ -38,7 +38,9 @@ const UserSchema = new Schema<UserDocumentInterface>({
         !value.replace(/[\s()+\-\.]|ext/gi, "").match(/^\d{5,}$/) &&
         value.length != 0
       ) {
-        throw new Error("User phone number's format is wrong");
+        throw new Error(
+          "El formato del número de teléfono del usuario es incorrecto"
+        );
       }
     },
   },
@@ -54,6 +56,7 @@ UserSchema.post("findOneAndDelete", async function (user) {
   await Auth.findOneAndDelete({
     user: user._id,
   });
+  // deleteMany mongoose middleware wasn't working, so the courses are deleted one by one
   const coursesToDelete = await Course.find({ admin: user._id });
   for (let index = 0; index < coursesToDelete.length; index++) {
     await Course.findByIdAndDelete(coursesToDelete[index]._id);
