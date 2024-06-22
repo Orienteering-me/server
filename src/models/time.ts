@@ -3,14 +3,14 @@ import { UserDocumentInterface } from "./user.js";
 import { CheckpointDocumentInterface } from "./checkpoint.js";
 import { CourseDocumentInterface } from "./course.js";
 
-export interface StatDocumentInterface extends Document {
+export interface CheckpointTimeDocumentInterface extends Document {
   user: UserDocumentInterface;
   course: CourseDocumentInterface;
   checkpoint: CheckpointDocumentInterface;
   time: Date;
 }
 
-const StatSchema = new Schema<StatDocumentInterface>({
+const CheckpointTimeSchema = new Schema<CheckpointTimeDocumentInterface>({
   user: {
     type: Schema.Types.ObjectId,
     required: true,
@@ -32,4 +32,7 @@ const StatSchema = new Schema<StatDocumentInterface>({
   },
 });
 
-export const Stat = model<StatDocumentInterface>("Stat", StatSchema);
+export const CheckpointTime = model<CheckpointTimeDocumentInterface>(
+  "CheckpointTime",
+  CheckpointTimeSchema
+);

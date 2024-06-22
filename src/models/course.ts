@@ -1,6 +1,7 @@
 import { Document, Schema, model } from "mongoose";
 import { UserDocumentInterface } from "./user.js";
 import { Checkpoint, CheckpointDocumentInterface } from "./checkpoint.js";
+import { CheckpointTime } from "./time.js";
 
 export interface CourseDocumentInterface extends Document {
   name: string;
@@ -27,6 +28,7 @@ const CourseSchema = new Schema<CourseDocumentInterface>({
     required: true,
     ref: "User",
   },
+  // Checkpoints are added in this model for simplicity
   checkpoints: {
     type: [Schema.Types.ObjectId],
     required: true,
@@ -36,6 +38,7 @@ const CourseSchema = new Schema<CourseDocumentInterface>({
 
 CourseSchema.post("findOneAndDelete", async function (course) {
   await Checkpoint.deleteMany({ course: course._id }).exec();
+  await CheckpointTime.deleteMany({ course: course._id }).exec();
 });
 
 export const Course = model<CourseDocumentInterface>("Course", CourseSchema);

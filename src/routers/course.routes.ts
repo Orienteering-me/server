@@ -66,7 +66,10 @@ courseRouter.post("/courses", async (req, res) => {
 
 courseRouter.get("/courses", async (req, res) => {
   try {
+    // If the query includes the courses's name sends the course requested
+    // Else sends all the courses saved
     if (req.query.name) {
+      // Checks if the course exists
       let course;
       course = await Course.findOne({ name: req.query.name }).populate({
         path: "admin",
@@ -75,25 +78,24 @@ courseRouter.get("/courses", async (req, res) => {
       if (!course) {
         return res.status(404).send("Carrera no encontrada");
       }
-      if (res.locals.user_email == course.admin.email) {
+      const isAdmin = res.locals.user_email == course.admin.email;
+      if (isAdmin) {
+        // If the requesting user is admin of the course sends the checkpoints with QR codes
         await course.populate({
           path: "checkpoints",
           select: ["number", "lat", "lng", "qr_code"],
         });
-        return res.status(200).send({
-          is_admin: true,
-          course: course,
-        });
       } else {
+        // If the requesting user is admin of the course sends the checkpoints without QR codes
         await course.populate({
           path: "checkpoints",
           select: ["number", "lat", "lng"],
         });
-        return res.status(200).send({
-          is_admin: false,
-          course: course,
-        });
       }
+      return res.status(200).send({
+        is_admin: isAdmin,
+        course: course,
+      });
     } else {
       const courses = await Course.find()
         .populate({
@@ -104,10 +106,11 @@ courseRouter.get("/courses", async (req, res) => {
           path: "checkpoints",
           select: ["number", "lat", "lng"],
         });
+      // Checks if there are courses saved
       if (courses.length == 0) {
         return res.status(404).send("Carreras no encontradas");
       }
-      return res.status(200).send(courses);
+      return res.status(200).send({ courses: courses });
     }
   } catch (error) {
     return res.status(500).send(error);

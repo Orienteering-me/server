@@ -33,7 +33,7 @@ authRouter.post("/login", async (req, res) => {
     // Checks if user exists
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(401).send("Usuario no encontrado");
+      return res.status(401).send("El usuario no existe");
     }
     // Checks if the password is correct
     const isPasswordCorrect = await bcrypt.compare(
@@ -55,10 +55,10 @@ authRouter.post("/login", async (req, res) => {
       email: user.email,
     };
     const refreshToken = await jwt.sign(data, process.env.JWT_REFRESH_SECRET!, {
-      expiresIn: "24h",
+      expiresIn: "48h",
     });
     const accessToken = await jwt.sign(data, process.env.JWT_ACCESS_SECRET!, {
-      expiresIn: "15m",
+      expiresIn: "30m",
     });
     await new Auth({
       user: user._id,
@@ -87,12 +87,12 @@ authRouter.post("/refresh", async (req, res) => {
       deleteAuth((<any>decoded).email);
       return res.status(401).send("Acceso denegado");
     }
-    // Checks if token user exists
+    // Checks if token's user exists
     const user = await User.findOne({
       email: (<any>verified).email,
     });
     if (!user) {
-      return res.status(401).send("Acceso denegado");
+      return res.status(404).send("El usuario no existe");
     }
     // Checks if the refresh token is valid
     const auth = await Auth.findOne({
@@ -119,7 +119,7 @@ authRouter.post("/refresh", async (req, res) => {
       data,
       process.env.JWT_ACCESS_SECRET!,
       {
-        expiresIn: "15m",
+        expiresIn: "30m",
       }
     );
     await new Auth({

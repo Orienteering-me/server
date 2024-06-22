@@ -8,7 +8,7 @@ import { courseRouter } from "./routers/course.routes.js";
 import { authRouter } from "./routers/auth.routes.js";
 import { User } from "./models/user.js";
 import { Auth } from "./models/auth.js";
-import { statsRouter } from "./routers/stats.routes.js";
+import { timesRouter } from "./routers/times.routes.js";
 
 const corsOptions = {
   methods: ["GET", "POST", "PATCH", "DELETE"],
@@ -27,10 +27,10 @@ app.use("/courses", async (req, res, next) => {
   isAuthorized(req, res, next);
 });
 app.use(courseRouter);
-app.use("/stats", async (req, res, next) => {
+app.use("/times", async (req, res, next) => {
   isAuthorized(req, res, next);
 });
-app.use(statsRouter);
+app.use(timesRouter);
 app.use(defaultRouter);
 
 async function isAuthorized(req: any, res: any, next: any) {

@@ -1,6 +1,7 @@
 import { Document, Schema, model } from "mongoose";
 import { Course } from "./course.js";
 import { Auth } from "./auth.js";
+import { CheckpointTime } from "./time.js";
 
 export interface UserDocumentInterface extends Document {
   email: string;
@@ -56,11 +57,12 @@ UserSchema.post("findOneAndDelete", async function (user) {
   await Auth.findOneAndDelete({
     user: user._id,
   });
-  // deleteMany mongoose middleware wasn't working, so the courses are deleted one by one
+  // deleteMany mongoose middleware is't working, so the courses are deleted one by one
   const coursesToDelete = await Course.find({ admin: user._id });
   for (let index = 0; index < coursesToDelete.length; index++) {
     await Course.findByIdAndDelete(coursesToDelete[index]._id);
   }
+  await CheckpointTime.deleteMany({ user: user._id });
 });
 
 export const User = model<UserDocumentInterface>("User", UserSchema);

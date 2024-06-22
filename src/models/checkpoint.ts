@@ -2,19 +2,14 @@ import { Document, Schema, model } from "mongoose";
 import { CourseDocumentInterface } from "./course.js";
 
 export interface CheckpointDocumentInterface extends Document {
-  course: CourseDocumentInterface;
   number: number;
+  course: CourseDocumentInterface;
   lat: number;
   lng: number;
   qr_code: string;
 }
 
 const CheckpointSchema = new Schema<CheckpointDocumentInterface>({
-  course: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    ref: "Course",
-  },
   number: {
     type: Number,
     required: true,
@@ -25,6 +20,11 @@ const CheckpointSchema = new Schema<CheckpointDocumentInterface>({
         );
       }
     },
+  },
+  course: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: "Course",
   },
   lat: {
     type: Number,
