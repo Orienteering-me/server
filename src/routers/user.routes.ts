@@ -2,6 +2,7 @@ import * as express from "express";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.js";
 import { Auth } from "../models/auth.js";
+import { Course } from "../models/course.js";
 
 export const userRouter = express.Router();
 
@@ -19,6 +20,31 @@ userRouter.get("/users", async (req, res) => {
       email: user.email,
       name: user.name,
       phone_number: user.phone_number,
+    });
+  } catch (error) {
+    return res.status(500).send(error);
+  }
+});
+
+userRouter.get("/users/courses", async (req, res) => {
+  try {
+    // Checks if user exists
+    const user = await User.findOne({
+      email: res.locals.user_email,
+    });
+    if (!user) {
+      return res.status(404).send("Usuario no encontrado");
+    }
+    // Checks if user exists
+    const courses = await Course.find({
+      admin: user._id,
+    }).populate({
+      path: "checkpoints",
+      select: ["number", "lat", "lng"],
+    });
+    // Sends the user data
+    return res.status(200).send({
+      courses: courses,
     });
   } catch (error) {
     return res.status(500).send(error);
