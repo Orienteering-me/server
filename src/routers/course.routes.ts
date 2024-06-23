@@ -1,14 +1,18 @@
 import * as express from "express";
 import bcrypt from "bcryptjs";
 import { Course } from "../models/course.js";
-import { Checkpoint } from "../models/checkpoint.js";
+import {
+  Checkpoint,
+  CheckpointDocumentInterface,
+} from "../models/checkpoint.js";
 import { User } from "../models/user.js";
+import { CheckpointTime } from "../models/time.js";
 
 export const courseRouter = express.Router();
 
 courseRouter.post("/courses", async (req, res) => {
   try {
-    // Checks if the user already exists
+    // Checks if the course already exists
     const courseToCreate = await Course.findOne({
       name: req.body.name,
     });
@@ -92,9 +96,12 @@ courseRouter.get("/courses", async (req, res) => {
           select: ["number", "lat", "lng"],
         });
       }
+      // Checks if the course has uploaded times
+      const uploadedTimes = await CheckpointTime.find({ course: course._id });
       return res.status(200).send({
-        is_admin: isAdmin,
         course: course,
+        is_admin: isAdmin,
+        has_uploaded_times: uploadedTimes.length > 0,
       });
     } else {
       const courses = await Course.find()
@@ -117,9 +124,96 @@ courseRouter.get("/courses", async (req, res) => {
   }
 });
 
-// TODO: Updates course by name
 courseRouter.patch("/courses", async (req, res) => {
-  return res.status(501).send();
+  try {
+    // Checks if update is allowed
+    const allowedUpdates = ["name", "checkpoints"];
+    const actualUpdates = Object.keys(req.body);
+    const isValidUpdate = actualUpdates.every((update) =>
+      allowedUpdates.includes(update)
+    );
+    if (!isValidUpdate) {
+      return res.status(400).send({
+        error: "Actualización prohibida",
+      });
+    }
+    // Checks if the query is correct
+    if (!req.query.name) {
+      return res.status(400).send({
+        error: "La consulta debe incluir el nombre de la carrera",
+      });
+    }
+    // Checks if the course exists
+    const courseToUpdate = await Course.findOne({
+      name: req.query.name,
+    }).populate({
+      path: "admin",
+      select: ["email"],
+    });
+    if (!courseToUpdate) {
+      return res.status(404).send("Carrera no encontrada");
+    }
+    // Checks if the user in the token is the admin
+    if (res.locals.user_email != courseToUpdate.admin.email) {
+      return res.status(401).send("Acceso denegado");
+    }
+    // Checks if the new name is in use
+    if (req.body.name) {
+      if (req.body.name != courseToUpdate.name) {
+        const updatedNameCourse = await Course.findOne({
+          name: req.body.name,
+        });
+        if (updatedNameCourse) {
+          return res
+            .status(409)
+            .send("Ya existe una carrera registrada con este nombre");
+        }
+      }
+    }
+    // Saves the new checkpoints
+    const newCheckpoints: string[] = [];
+    for (let index = 0; index < req.body.checkpoints.length; index++) {
+      const qrCode = await bcrypt.hash(
+        courseToUpdate.name + "&" + req.body.checkpoints[index].number,
+        10
+      );
+      const checkpointToSave = await Checkpoint.findOne({ qr_code: qrCode });
+      if (checkpointToSave) {
+        newCheckpoints.push(checkpointToSave._id);
+      } else {
+        const checkpoint = new Checkpoint({
+          course: courseToUpdate._id,
+          number: req.body.checkpoints[index].number,
+          lat: req.body.checkpoints[index].lat,
+          lng: req.body.checkpoints[index].lng,
+          qr_code: qrCode,
+        });
+        const savedCheckpoint = await checkpoint.save();
+        newCheckpoints.push(savedCheckpoint._id);
+      }
+    }
+    // Deletes the checkpoints that no longer exist
+    const checkpointsToDelete = courseToUpdate.checkpoints.filter(
+      (checkpoint) => !newCheckpoints.includes(checkpoint._id)
+    );
+    for (let index = 0; index < checkpointsToDelete.length; index++) {
+      await Checkpoint.findByIdAndDelete(checkpointsToDelete[index]);
+    }
+    // Updates the course with the new info
+    await courseToUpdate.updateOne(
+      {
+        name: req.body.name,
+        checkpoints: newCheckpoints,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+    return res.status(200).send();
+  } catch (error) {
+    return res.status(500).send(error);
+  }
 });
 
 courseRouter.delete("/courses", async (req, res) => {

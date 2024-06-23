@@ -94,8 +94,6 @@ userRouter.patch("/users", async (req, res) => {
         runValidators: true,
       }
     );
-
-    // Sends a new JWT with the updated data
     return res.status(200).send();
   } catch (error) {
     return res.status(500).send(error);
