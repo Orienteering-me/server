@@ -34,15 +34,9 @@ timesRouter.post("/times", upload.single("image"), async (req, res) => {
         msg: "La petición debe incluir la imagen QR a procesar",
       });
     }
-    // Checks if the query has a course field
-    if (!req.query.course) {
-      return res.status(400).send({
-        msg: "La consulta debe incluir el nombre de la carrera",
-      });
-    }
     // Checks if the course exists
     const course = await Course.findOne({
-      name: req.query.course.toString(),
+      name: req.body.course.toString(),
     }).populate({
       path: "checkpoints",
       select: ["number", "lat", "lng", "qr_code"],

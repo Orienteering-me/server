@@ -3,6 +3,7 @@ import { app } from "../../src/app.js";
 import { Course } from "../../src/models/course.js";
 import { User } from "../../src/models/user.js";
 import jwt from "jsonwebtoken";
+import { Auth } from "../../src/models/auth.js";
 
 const testUser = {
   email: "coursemodeltest@gmail.com",
@@ -11,26 +12,50 @@ const testUser = {
   password: "Testuser123",
 };
 
-const token = jwt.sign(
+const accessToken = jwt.sign(
   {
-    domain: "orienteering.me",
-    email: "coursemodeltest@gmail.com",
+    email: testUser.email,
   },
-  process.env.JWT_SECRET!
+  process.env.JWT_ACCESS_SECRET!
+);
+
+const refreshToken = jwt.sign(
+  {
+    email: testUser.email,
+  },
+  process.env.JWT_REFRESH_SECRET!
 );
 
 describe("Course Model", () => {
   beforeEach(async () => {
     await Course.deleteMany();
     await User.deleteMany();
-    await new User(testUser).save();
+    const savedUser = await new User(testUser).save();
+    const testAuth = {
+      user: savedUser!._id,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    await new Auth(testAuth).save();
   });
 
   it("Must get an error because the name is required", async () => {
     await request(app)
       .post("/courses")
-      .set("auth-token", token)
+      .set("access-token", accessToken)
       .send({ admin: "coursemodeltest@gmail.com", checkpoints: [] })
+      .expect(500);
+  });
+
+  it("Must get an error because the name format is wrong", async () => {
+    await request(app)
+      .post("/courses")
+      .set("access-token", accessToken)
+      .send({
+        name: "CourseModelTest&",
+        admin: "coursemodeltest@gmail.com",
+        checkpoints: [],
+      })
       .expect(500);
   });
 
@@ -39,10 +64,10 @@ describe("Course Model", () => {
   it("Must get an error because the checkpoints are required", async () => {
     await request(app)
       .post("/courses")
-      .set("auth-token", token)
+      .set("access-token", accessToken)
       .send({
-        admin: "coursemodeltest@gmail.com",
         name: "CourseModelTest",
+        admin: "coursemodeltest@gmail.com",
       })
       .expect(500);
   });
@@ -50,7 +75,7 @@ describe("Course Model", () => {
   it("Must save the course", async () => {
     await request(app)
       .post("/courses")
-      .set("auth-token", token)
+      .set("access-token", accessToken)
       .send({
         admin: "coursemodeltest@gmail.com",
         name: "CourseModelTest",

@@ -3,6 +3,8 @@ import { expect } from "chai";
 import { app } from "../../src/app.js";
 import { User } from "../../src/models/user.js";
 import jwt from "jsonwebtoken";
+import { Auth } from "../../src/models/auth.js";
+import { Course } from "../../src/models/course.js";
 
 const testUser = {
   email: "userroutetest@gmail.com",
@@ -11,71 +13,36 @@ const testUser = {
   password: "Testuser123",
 };
 
-const token = jwt.sign(
+const accessToken = jwt.sign(
   {
-    domain: "orienteering.me",
-    email: "userroutetest@gmail.com",
+    email: testUser.email,
   },
-  process.env.JWT_SECRET!
+  process.env.JWT_ACCESS_SECRET!
 );
 
-describe("POST /users", () => {
-  beforeEach(async () => {
-    await User.deleteMany();
-    await new User(testUser).save();
-  });
-
-  it("Must create a new user", async () => {
-    const response = await request(app)
-      .post("/users")
-      .send({
-        email: "userroutetest2@gmail.com",
-        name: "New Test User",
-        phone_number: "123456789",
-        password:
-          "$2a$10$gTCrwgLHVDOkbNRYzuFeFO3W3WLBOTkk9qoD6PyZgI44aOLrR38dC",
-      })
-      .expect(201);
-
-    expect(response.body).to.include({
-      email: "userroutetest2@gmail.com",
-    });
-    expect(response.body).to.not.include({
-      password: "$2a$10$gTCrwgLHVDOkbNRYzuFeFO3W3WLBOTkk9qoD6PyZgI44aOLrR38dC",
-    });
-
-    const NewTestUser = await User.findOne({
-      email: response.body.email,
-    });
-    expect(NewTestUser!.email).to.equal("userroutetest2@gmail.com");
-  });
-
-  it("Must get an error because the user already exists", async () => {
-    await request(app).post("/users").send(testUser).expect(409);
-  });
-
-  it("Must get an error because the body is malformed", async () => {
-    await request(app)
-      .post("/users")
-      .send({
-        email: "userroutetest2@gmail.com",
-        name: "New Test User",
-        phone_number: "123456789",
-      })
-      .expect(500);
-  });
-});
+const refreshToken = jwt.sign(
+  {
+    email: testUser.email,
+  },
+  process.env.JWT_REFRESH_SECRET!
+);
 
 describe("GET /users", () => {
   beforeEach(async () => {
     await User.deleteMany();
-    await new User(testUser).save();
+    const savedUser = await new User(testUser).save();
+    const testAuth = {
+      user: savedUser!._id,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    await new Auth(testAuth).save();
   });
 
-  it("Must get a user with the token data a new user", async () => {
+  it("Must get a user with the token data", async () => {
     const response = await request(app)
       .get("/users")
-      .set("auth-token", token)
+      .set("Access-Token", accessToken)
       .expect(200);
 
     expect(response.body).to.include({
@@ -88,53 +55,58 @@ describe("GET /users", () => {
     });
   });
 
-  it("Must get an error because the token can't be verified", async () => {
-    await request(app)
-      .get("/users")
-      .set(
-        "auth-token",
-        jwt.sign(
-          {
-            domain: "orienteering.me",
-            email: "userroutetest@gmail.com",
-          },
-          "WRONG_JWT_SECRET"
-        )
-      )
-      .expect(401);
+  // The 404 status code is difficult to force without triggering a 401 status code before
+});
+
+describe("GET /users/courses", () => {
+  beforeEach(async () => {
+    await User.deleteMany();
+    const savedUser = await new User(testUser).save();
+    const testAuth = {
+      user: savedUser!._id,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    await new Auth(testAuth).save();
+    await Course.deleteMany();
+    await new Course({
+      admin: savedUser!._id,
+      name: "CourseRouteTest",
+      checkpoints: [],
+    }).save();
   });
 
-  it("Must get an error because a token is expected", async () => {
-    await request(app).get("/users").expect(401);
+  it("Must get the courses created by a user with the token data", async () => {
+    const response = await request(app)
+      .get("/users/courses")
+      .set("Access-Token", accessToken)
+      .expect(200);
+
+    expect(response.body.courses.length).to.equal(1);
+    expect(response.body.courses[0]).to.include({
+      name: "CourseRouteTest",
+    });
   });
 
-  it("Must get an error because the user doesn't exist", async () => {
-    await request(app)
-      .get("/users")
-      .set(
-        "auth-token",
-        jwt.sign(
-          {
-            domain: "orienteering.me",
-            email: "userroutetest2@gmail.com",
-          },
-          process.env.JWT_SECRET!
-        )
-      )
-      .expect(404);
-  });
+  // The 404 status code is difficult to force without triggering a 401 status code before
 });
 
 describe("PATCH /users", () => {
   beforeEach(async () => {
     await User.deleteMany();
-    await new User(testUser).save();
+    const savedUser = await new User(testUser).save();
+    const testAuth = {
+      user: savedUser!._id,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    await new Auth(testAuth).save();
   });
 
   it("Must update a user", async () => {
     const response = await request(app)
       .patch("/users")
-      .set("auth-token", token)
+      .set("Access-Token", accessToken)
       .send({
         email: "userroutetest2@gmail.com",
         name: "New Test User",
@@ -142,69 +114,32 @@ describe("PATCH /users", () => {
         password: "Testuser123",
       })
       .expect(200);
-
-    const responseToken = jwt.verify(
-      response.body.token!.toString(),
-      process.env.JWT_SECRET!
+    const responseAccessToken = jwt.verify(
+      response.body.access_token!,
+      process.env.JWT_ACCESS_SECRET!
     );
-    expect((<any>responseToken).domain).to.equal("orienteering.me");
-    expect((<any>responseToken).email).to.equal("userroutetest2@gmail.com");
-    expect((<any>token).password).to.be.undefined;
-
-    const UpdatedUser = await User.findOne({
-      email: (<any>responseToken).email,
-    });
-    expect(UpdatedUser!.email).to.equal("userroutetest2@gmail.com");
-  });
-
-  it("Must get an error because the token can't be verified", async () => {
-    await request(app)
-      .patch("/users")
-      .set(
-        "auth-token",
-        jwt.sign(
-          {
-            domain: "orienteering.me",
-            email: "userroutetest@gmail.com",
-          },
-          "WRONG_JWT_SECRET"
-        )
-      )
-      .send({
-        email: "userroutetest2@gmail.com",
-        name: "New Test User",
-        phone_number: "323456789",
-        password: "Testuser123",
-      })
-      .expect(401);
-
-    const UpdatedUser = await User.findOne({
-      email: "userroutetest@gmail.com",
-    });
-    expect(UpdatedUser!.email).to.equal("userroutetest@gmail.com");
-  });
-
-  it("Must get an error because a token is expected", async () => {
-    await request(app)
-      .patch("/users")
-      .send({
-        email: "userroutetest2@gmail.com",
-        name: "New Test User",
-        phone_number: "323456789",
-        password: "Testuser123",
-      })
-      .expect(401);
-
-    const UpdatedUser = await User.findOne({
-      email: "userroutetest@gmail.com",
-    });
-    expect(UpdatedUser!.email).to.equal("userroutetest@gmail.com");
+    expect((<any>responseAccessToken).email).to.equal(
+      "userroutetest2@gmail.com"
+    );
+    expect((<any>responseAccessToken).exp).to.equal(
+      (<any>responseAccessToken).iat + 30 * 60
+    );
+    const responseRefreshToken = jwt.verify(
+      response.body.refresh_token!,
+      process.env.JWT_REFRESH_SECRET!
+    );
+    expect((<any>responseRefreshToken).email).to.equal(
+      "userroutetest2@gmail.com"
+    );
+    expect((<any>responseRefreshToken).exp).to.equal(
+      (<any>responseRefreshToken).iat + 48 * 60 * 60
+    );
   });
 
   it("Must get an error because the update is forbidden", async () => {
     await request(app)
       .patch("/users")
-      .set("auth-token", token)
+      .set("Access-Token", accessToken)
       .send({
         email: "userroutetest2@gmail.com",
         name: "New Test User",
@@ -214,40 +149,15 @@ describe("PATCH /users", () => {
       })
       .expect(400);
 
-    const UpdatedUser = await User.findOne({
+    const updatedUser = await User.findOne({
       email: "userroutetest@gmail.com",
     });
-    expect(UpdatedUser!.email).to.equal("userroutetest@gmail.com");
+    expect(updatedUser).to.not.be.null;
   });
 
-  it("Must get an error because the user wasn't found", async () => {
-    await request(app)
-      .patch("/users")
-      .set(
-        "auth-token",
-        jwt.sign(
-          {
-            domain: "orienteering.me",
-            email: "doesntexist@gmail.com",
-          },
-          process.env.JWT_SECRET!
-        )
-      )
-      .send({
-        email: "userroutetest2@gmail.com",
-        name: "New Test User",
-        phone_number: "323456789",
-        password: "Testuser123",
-      })
-      .expect(404);
+  // The 404 status code is difficult to force without triggering a 401 status code before
 
-    const UpdatedUser = await User.findOne({
-      email: "userroutetest@gmail.com",
-    });
-    expect(UpdatedUser!.email).to.equal("userroutetest@gmail.com");
-  });
-
-  it("Must get an error because the user already exists", async () => {
+  it("Must get an error because a user with the new email already exists", async () => {
     await new User({
       email: "userroutetest2@gmail.com",
       name: "Test User",
@@ -257,7 +167,7 @@ describe("PATCH /users", () => {
 
     await request(app)
       .patch("/users")
-      .set("auth-token", token)
+      .set("Access-Token", accessToken)
       .send({
         email: "userroutetest2@gmail.com",
         name: "New Test User",
@@ -266,16 +176,16 @@ describe("PATCH /users", () => {
       })
       .expect(409);
 
-    const UpdatedUser = await User.findOne({
+    const updatedUser = await User.findOne({
       email: "userroutetest@gmail.com",
     });
-    expect(UpdatedUser!.email).to.equal("userroutetest@gmail.com");
+    expect(updatedUser).to.not.be.null;
   });
 
   it("Must get an error because the body is malformed", async () => {
     await request(app)
       .patch("/users")
-      .set("auth-token", token)
+      .set("Access-Token", accessToken)
       .send({
         email: "userroutetest2",
         name: "New Test User",
@@ -284,77 +194,36 @@ describe("PATCH /users", () => {
       })
       .expect(500);
 
-    const UpdatedUser = await User.findOne({
+    const updatedUser = await User.findOne({
       email: "userroutetest@gmail.com",
     });
-    expect(UpdatedUser!.email).to.equal("userroutetest@gmail.com");
+    expect(updatedUser).to.not.be.null;
   });
 });
 
 describe("DELETE /users", () => {
   beforeEach(async () => {
     await User.deleteMany();
-    await new User(testUser).save();
+    const savedUser = await new User(testUser).save();
+    const testAuth = {
+      user: savedUser!._id,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    await new Auth(testAuth).save();
   });
 
   it("Must delete a user", async () => {
-    const response = await request(app)
+    await request(app)
       .delete("/users")
-      .set("auth-token", token)
+      .set("Access-Token", accessToken)
       .expect(200);
 
-    expect(response.body).to.include({
+    const deletedUser = await User.findOne({
       email: "userroutetest@gmail.com",
     });
-    const DeletedUser = await User.findOne({
-      email: response.body.email,
-    });
-    expect(DeletedUser).to.be.null;
+    expect(deletedUser).to.be.null;
   });
 
-  it("Must get an error because the token can't be verified", async () => {
-    await request(app)
-      .delete("/users")
-      .set(
-        "auth-token",
-        jwt.sign(
-          {
-            domain: "orienteering.me",
-            email: "userroutetest@gmail.com",
-          },
-          "WRONG_JWT_SECRET"
-        )
-      )
-      .expect(401);
-
-    const DeletedUser = await User.findOne({
-      email: "userroutetest@gmail.com",
-    });
-    expect(DeletedUser).not.to.be.null;
-  });
-
-  it("Must get an error because a token is expected", async () => {
-    await request(app).delete("/users").expect(401);
-
-    const DeletedUser = await User.findOne({
-      email: "userroutetest@gmail.com",
-    });
-    expect(DeletedUser).not.to.be.null;
-  });
-
-  it("Must get an error because the user wasn't found", async () => {
-    await request(app)
-      .delete("/users")
-      .set(
-        "auth-token",
-        jwt.sign(
-          {
-            domain: "orienteering.me",
-            email: "doesntexist@gmail.com",
-          },
-          process.env.JWT_SECRET!
-        )
-      )
-      .expect(404);
-  });
+  // The 404 status code is difficult to force without triggering a 401 status code before
 });

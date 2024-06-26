@@ -86,7 +86,7 @@ userRouter.patch("/users", async (req, res) => {
         }
       }
     }
-    const updatedUser = await userToUpdate.updateOne(
+    await userToUpdate.updateOne(
       {
         ...req.body,
       },
@@ -97,30 +97,28 @@ userRouter.patch("/users", async (req, res) => {
     );
     //Updates the users authorization
     const data = {
-      email: updatedUser.email,
+      email: req.body.email ? req.body.email : userToUpdate.email,
     };
-    const refresh_token = await jwt.sign(
-      data,
-      process.env.JWT_REFRESH_SECRET!,
-      {
-        expiresIn: "48h",
-      }
-    );
-    const access_token = await jwt.sign(data, process.env.JWT_ACCESS_SECRET!, {
-      expiresIn: "15m",
+    const refreshToken = await jwt.sign(data, process.env.JWT_REFRESH_SECRET!, {
+      expiresIn: "48h",
     });
-    await Auth.findByIdAndUpdate(
-      updatedUser._id,
+    const accessToken = await jwt.sign(data, process.env.JWT_ACCESS_SECRET!, {
+      expiresIn: "30m",
+    });
+    await Auth.findOneAndUpdate(
+      { user: userToUpdate._id },
       {
-        refresh_token: refresh_token,
-        access_token: access_token,
+        refresh_token: refreshToken,
+        access_token: accessToken,
       },
       {
         new: true,
         runValidators: true,
       }
     );
-    return res.status(200).send();
+    return res
+      .status(200)
+      .send({ refresh_token: refreshToken, access_token: accessToken });
   } catch (error) {
     return res.status(500).send(error);
   }

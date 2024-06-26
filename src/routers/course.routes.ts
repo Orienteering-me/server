@@ -1,16 +1,14 @@
 import * as express from "express";
 import bcrypt from "bcryptjs";
 import { Course } from "../models/course.js";
-import {
-  Checkpoint,
-  CheckpointDocumentInterface,
-} from "../models/checkpoint.js";
+import { Checkpoint } from "../models/checkpoint.js";
 import { User } from "../models/user.js";
 import { CheckpointTime } from "../models/time.js";
 
 export const courseRouter = express.Router();
 
 courseRouter.post("/courses", async (req, res) => {
+  let courseSaved = false;
   try {
     // Checks if the course already exists
     const courseToCreate = await Course.findOne({
@@ -33,6 +31,7 @@ courseRouter.post("/courses", async (req, res) => {
       checkpoints: [],
     });
     await course.save();
+    courseSaved = true;
     // Saves the checkpoints
     for (let index = 0; index < req.body.checkpoints.length; index++) {
       const checkpoint = new Checkpoint({
@@ -61,9 +60,11 @@ courseRouter.post("/courses", async (req, res) => {
     return res.status(201).send();
   } catch (error) {
     // If error deletes the course created
-    await Course.findOneAndDelete({
-      name: req.body.name,
-    });
+    if (courseSaved) {
+      await Course.findOneAndDelete({
+        name: req.body.name,
+      });
+    }
     return res.status(500).send(error);
   }
 });
@@ -179,6 +180,10 @@ courseRouter.patch("/courses", async (req, res) => {
       );
       const checkpointToSave = await Checkpoint.findOne({ qr_code: qrCode });
       if (checkpointToSave) {
+        await checkpointToSave.updateOne({
+          lat: req.body.checkpoints[index].lat,
+          lng: req.body.checkpoints[index].lng,
+        });
         newCheckpoints.push(checkpointToSave._id);
       } else {
         const checkpoint = new Checkpoint({

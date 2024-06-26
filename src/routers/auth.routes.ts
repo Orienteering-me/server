@@ -160,6 +160,9 @@ authRouter.post("/logout", async (req, res) => {
     const auth = await Auth.findOne({
       user: user._id,
     });
+    if (!auth) {
+      return res.status(401).send("Acceso denegado");
+    }
     if (auth!.refresh_token != refreshToken) {
       deleteAuth((<any>verified).email);
       return res.status(401).send("Acceso denegado");

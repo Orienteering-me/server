@@ -5,6 +5,8 @@ import { User } from "../../src/models/user.js";
 import jwt from "jsonwebtoken";
 import { Auth } from "../../src/models/auth.js";
 
+// TODO
+
 const testUser = {
   email: "checkpointmodeltest@gmail.com",
   name: "Test User",
@@ -26,7 +28,7 @@ const refreshToken = jwt.sign(
   process.env.JWT_REFRESH_SECRET!
 );
 
-describe("Checkpoint Model", () => {
+describe("CheckpointTimes Model", () => {
   beforeEach(async () => {
     await Course.deleteMany();
     await User.deleteMany();
