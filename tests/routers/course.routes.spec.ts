@@ -369,7 +369,7 @@ describe("DELETE /courses", () => {
     }).save();
   });
 
-  it("Must delete a user", async () => {
+  it("Must delete a course", async () => {
     await request(app)
       .delete("/courses?name=CourseRouteTest")
       .set("Access-Token", accessToken)

@@ -197,6 +197,66 @@ timesRouter.post("/times", upload.single("image"), async (req, res) => {
   }
 });
 
+timesRouter.get("/times", async (req, res) => {
+  try {
+    // Checks if the query is correct
+    if (!req.query.course) {
+      return res.status(400).send({
+        error: "La consulta debe incluir el nombre de la carrera",
+      });
+    }
+    // Checks if the course exists
+    const course = await Course.findOne({
+      name: req.query.course.toString(),
+    }).populate({ path: "admin", select: "email" });
+    if (!course) {
+      return res.status(404).send({
+        msg: "Carrera no encontrada",
+      });
+    }
+    const users = await CheckpointTime.find({
+      course: course._id,
+    })
+      .select("user")
+      .distinct("user");
+    const results = [];
+    let hasUploadedTimes = false;
+    for (let index = 0; index < users.length; index++) {
+      const user = await User.findById(users[index]);
+      const times = await CheckpointTime.find({
+        course: course._id,
+        user: user!._id,
+      }).populate({
+        path: "checkpoint",
+        select: ["number"],
+      });
+      if (times.length != course.checkpoints.length) {
+        results.push({
+          user: { email: user!.email, name: user!.name },
+          times: null,
+        });
+      } else {
+        results.push({
+          user: { email: user!.email, name: user!.name },
+          times: times,
+        });
+        if (user!.email == res.locals.user_email) {
+          hasUploadedTimes = true;
+        }
+      }
+    }
+    // Sends the user data
+    return res.status(200).send({
+      results: results,
+      has_uploaded: hasUploadedTimes,
+      is_admin: course.admin.email == res.locals.user_email,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
 timesRouter.get("/times/uploaded", async (req, res) => {
   try {
     // Checks if the query is correct
@@ -225,9 +285,6 @@ timesRouter.get("/times/uploaded", async (req, res) => {
     const checkpoints = await Checkpoint.find({
       course: course._id,
     }).sort("number");
-    if (!checkpoints) {
-      return res.status(404).send("Puntos de control no encontrados");
-    }
     // Gets stats
     const times = [];
     for (let index = 0; index < checkpoints.length; index++) {
@@ -248,67 +305,6 @@ timesRouter.get("/times/uploaded", async (req, res) => {
   }
 });
 
-timesRouter.get("/times", async (req, res) => {
-  try {
-    // Checks if the query is correct
-    if (!req.query.course) {
-      return res.status(400).send({
-        error: "La consulta debe incluir el nombre de la carrera",
-      });
-    }
-    // Checks if the course exists
-    const course = await Course.findOne({
-      name: req.query.course.toString(),
-    }).populate({ path: "admin", select: "email" });
-    if (!course) {
-      return res.status(404).send({
-        msg: "Carrera no encontrada",
-      });
-    }
-    const users = await CheckpointTime.find({
-      course: course._id,
-    })
-      .select("user")
-      .distinct("user");
-    const results = [];
-    let hasUploadedStats = false;
-    for (let index = 0; index < users.length; index++) {
-      const user = await User.findById(users[index]);
-      const times = await CheckpointTime.find({
-        course: course._id,
-        user: user!._id,
-      }).populate({
-        path: "checkpoint",
-        select: ["number"],
-      });
-      if (times.length != course.checkpoints.length) {
-        results.push({
-          user: { email: user!.email, name: user!.name },
-          times: null,
-        });
-      } else {
-        results.push({
-          user: { email: user!.email, name: user!.name },
-          times: times,
-        });
-        if (user!.email == res.locals.user_email) {
-          hasUploadedStats = true;
-        }
-      }
-    }
-    // Sends the user data
-    return res.status(200).send({
-      results: results,
-      has_uploaded: hasUploadedStats,
-      is_admin: course.admin.email == res.locals.user_email,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).send(error);
-  }
-});
-
-// TODO
 timesRouter.delete("/times", async (req, res) => {
   try {
     // Checks if the query is correct
@@ -339,7 +335,16 @@ timesRouter.delete("/times", async (req, res) => {
     if (res.locals.user_email != course.admin.email) {
       return res.status(401).send("Acceso denegado");
     }
-    // Deletes the course triggering the schema post middleware
+    const times = await CheckpointTime.find({
+      course: course._id,
+      user: user._id,
+    });
+    // Checks if the user exists
+    if (times.length == 0) {
+      return res
+        .status(404)
+        .send("Este usuario no tiene resultados subidos para esta carrera");
+    }
     await CheckpointTime.deleteMany({
       course: course._id,
       user: user._id,
