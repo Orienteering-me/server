@@ -274,42 +274,28 @@ timesRouter.get("/times", async (req, res) => {
     let hasUploadedStats = false;
     for (let index = 0; index < users.length; index++) {
       const user = await User.findById(users[index]);
-      const stats = await CheckpointTime.find({
+      const times = await CheckpointTime.find({
         course: course._id,
         user: user!._id,
       }).populate({
         path: "checkpoint",
         select: ["number"],
       });
-      if (stats.length != course.checkpoints.length) {
+      if (times.length != course.checkpoints.length) {
         results.push({
-          course: course.name,
           user: { email: user!.email, name: user!.name },
-          time: Number.MAX_SAFE_INTEGER,
+          times: null,
         });
       } else {
-        const startTime = stats.find((stat) => {
-          return stat.checkpoint.number == 0;
-        });
-        const endTime = stats.find((stat) => {
-          return stat.checkpoint.number == course.checkpoints.length - 1;
-        });
-        const time = endTime!.time!.getTime() - startTime!.time!.getTime();
         results.push({
-          course: course.name,
           user: { email: user!.email, name: user!.name },
-          time: time,
+          times: times,
         });
         if (user!.email == res.locals.user_email) {
           hasUploadedStats = true;
         }
       }
     }
-    results.sort((result1, result2) => {
-      if (result1.time > result2.time) return 1;
-      if (result1.time < result2.time) return -1;
-      return 0;
-    });
     // Sends the user data
     return res.status(200).send({
       results: results,
