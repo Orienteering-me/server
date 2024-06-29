@@ -83,12 +83,13 @@ authRouter.post("/refresh", async (req, res) => {
     try {
       verified = jwt.verify(refreshToken!.toString(), jwtSecretKey!);
     } catch (error) {
-      console.log(error);
+      console.log("A" + error);
       try {
         const decoded = jwt.decode(refreshToken!.toString());
         deleteAuth((<any>decoded).email);
         return res.status(401).send("Acceso denegado");
       } catch (error) {
+        console.log("B" + error);
         return res.status(401).send("Acceso denegado");
       }
     }
@@ -104,10 +105,12 @@ authRouter.post("/refresh", async (req, res) => {
       user: user._id,
     });
     if (!auth) {
+      console.log("Not autorized");
       return res.status(401).send("Acceso denegado");
     }
     if (auth.refresh_token != refreshToken) {
       deleteAuth((<any>verified).email);
+      console.log("Bad token");
       return res.status(401).send("Acceso denegado");
     }
     // Deletes and sends the new pair of tokens
