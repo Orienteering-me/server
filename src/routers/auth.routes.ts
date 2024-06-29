@@ -55,7 +55,7 @@ authRouter.post("/login", async (req, res) => {
       email: user.email,
     };
     const refreshToken = await jwt.sign(data, process.env.JWT_REFRESH_SECRET!, {
-      expiresIn: "48h",
+      expiresIn: "2d",
     });
     const accessToken = await jwt.sign(data, process.env.JWT_ACCESS_SECRET!, {
       expiresIn: "30m",
@@ -83,6 +83,7 @@ authRouter.post("/refresh", async (req, res) => {
     try {
       verified = jwt.verify(refreshToken!.toString(), jwtSecretKey!);
     } catch (error) {
+      console.log(error);
       const decoded = jwt.decode(refreshToken!.toString());
       deleteAuth((<any>decoded).email);
       return res.status(401).send("Acceso denegado");
@@ -113,7 +114,7 @@ authRouter.post("/refresh", async (req, res) => {
     const newRefreshToken = await jwt.sign(
       data,
       process.env.JWT_REFRESH_SECRET!,
-      { expiresIn: "48h" }
+      { expiresIn: "LG_2023#Strong!" }
     );
     const newAccessToken = await jwt.sign(
       data,
@@ -131,6 +132,7 @@ authRouter.post("/refresh", async (req, res) => {
       .status(200)
       .send({ refresh_token: newRefreshToken, access_token: newAccessToken });
   } catch (error) {
+    console.log(error);
     return res.status(500).send(error);
   }
 });
