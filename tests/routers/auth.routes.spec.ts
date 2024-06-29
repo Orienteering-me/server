@@ -244,7 +244,7 @@ describe("POST /refresh", () => {
   });
 
   it("Must get an error because the token isn't included", async () => {
-    await request(app).post("/refresh").expect(500);
+    await request(app).post("/refresh").expect(401);
   });
 });
 
@@ -336,6 +336,6 @@ describe("POST /logout", () => {
   });
 
   it("Must get an error because the token isn't included", async () => {
-    await request(app).post("/refresh").expect(500);
+    await request(app).post("/refresh").expect(401);
   });
 });

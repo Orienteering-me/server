@@ -84,9 +84,13 @@ authRouter.post("/refresh", async (req, res) => {
       verified = jwt.verify(refreshToken!.toString(), jwtSecretKey!);
     } catch (error) {
       console.log(error);
-      const decoded = jwt.decode(refreshToken!.toString());
-      deleteAuth((<any>decoded).email);
-      return res.status(401).send("Acceso denegado");
+      try {
+        const decoded = jwt.decode(refreshToken!.toString());
+        deleteAuth((<any>decoded).email);
+        return res.status(401).send("Acceso denegado");
+      } catch (error) {
+        return res.status(401).send("Acceso denegado");
+      }
     }
     // Checks if token's user exists
     const user = await User.findOne({
@@ -114,7 +118,7 @@ authRouter.post("/refresh", async (req, res) => {
     const newRefreshToken = await jwt.sign(
       data,
       process.env.JWT_REFRESH_SECRET!,
-      { expiresIn: "LG_2023#Strong!" }
+      { expiresIn: "2d" }
     );
     const newAccessToken = await jwt.sign(
       data,
