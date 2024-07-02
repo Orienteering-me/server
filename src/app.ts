@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { userRouter } from "./routers/user.routes.js";
 import { defaultRouter } from "./routers/default.routes.js";
 import { courseRouter } from "./routers/course.routes.js";
-import { authRouter } from "./routers/auth.routes.js";
+import { authRouter, deleteAuth } from "./routers/auth.routes.js";
 import { User } from "./models/user.js";
 import { Auth } from "./models/auth.js";
 import { timesRouter } from "./routers/times.routes.js";
@@ -59,6 +59,7 @@ async function isAuthorized(req: any, res: any, next: any) {
       return res.status(401).send("Acceso denegado");
     }
     if (auth.access_token != accessToken) {
+      deleteAuth((<any>verified).email);
       return res.status(401).send("Acceso denegado");
     }
     res.locals.user_email = (<any>verified).email;

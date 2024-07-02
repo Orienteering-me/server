@@ -133,12 +133,10 @@ timesRouter.post("/times", upload.single("image"), async (req, res) => {
       checkpoint: checkpoint._id,
     });
     if (checkpointTime != null) {
-      if (checkpointTime.time <= imageTime) {
-        return res.status(409).send({
-          checkpoint: -1,
-          msg: "Ya hay un imagen subida con un tiempo mejor para este punto de control",
-        });
-      }
+      return res.status(409).send({
+        checkpoint: -1,
+        msg: "Ya hay un imagen subida para este punto de control",
+      });
     }
     const preCheckpoint = await Checkpoint.findOne({
       course: course._id,

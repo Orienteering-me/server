@@ -171,6 +171,16 @@ courseRouter.patch("/courses", async (req, res) => {
         }
       }
     }
+    const uploadedTimes = await CheckpointTime.find({
+      course: courseToUpdate._id,
+    });
+    if (uploadedTimes.length > 0) {
+      return res
+        .status(409)
+        .send(
+          "Esta carrera no se puede modificar porque tiene resultados asociados"
+        );
+    }
     // Saves the new checkpoints
     const newCheckpoints: string[] = [];
     for (let index = 0; index < req.body.checkpoints.length; index++) {

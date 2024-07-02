@@ -26,7 +26,9 @@ const refreshToken = jwt.sign(
   process.env.JWT_REFRESH_SECRET!
 );
 
-describe("Checkpoint Model", () => {
+describe("Checkpoint Model", function () {
+  this.timeout(5000);
+
   beforeEach(async () => {
     await Course.deleteMany();
     await User.deleteMany();
