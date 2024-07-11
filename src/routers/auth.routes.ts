@@ -110,7 +110,7 @@ authRouter.post("/refresh", async (req, res) => {
       return res.status(401).send("Acceso denegado");
     }
     // Deletes and sends the new pair of tokens
-    deleteAuth((<any>verified).email);
+    await deleteAuth((<any>verified).email);
     const data = {
       email: user.email,
     };
